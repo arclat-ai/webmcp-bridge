@@ -1,0 +1,35 @@
+{
+  "name": "webmcp-bridge",
+  "version": "0.1.0",
+  "description": "Bridge between browser-native WebMCP and Model Context Protocol (MCP)",
+  "type": "module",
+  "bin": {
+    "webmcp-bridge": "./dist/cli.js"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "discover": "tsx src/discover.ts",
+    "start": "tsx src/cli.ts",
+    "test": "node --test dist/**/*.test.js"
+  },
+  "keywords": [
+    "webmcp",
+    "mcp",
+    "model-context-protocol",
+    "playwright",
+    "browser"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.6.1",
+    "playwright": "^1.50.0",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3"
+  }
+}
