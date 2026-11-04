@@ -1,0 +1,119 @@
+import path from 'node:path';
+import { pathToFileURL } from 'node:url';
+import { chromium, type Browser, type BrowserContext, type Page } from 'playwright';
+import { getInjectedBridgeScript, type DiscoveredTool } from './bridge-injected.js';
+import { findChromiumExecutable } from './browser-utils.js';
+
+/**
+ * Resolves a URL or local file path into an absolute file:// or http(s):// URL.
+ */
+export function resolveTargetUrl(target: string): string {
+  if (target.startsWith('http://') || target.startsWith('https://') || target.startsWith('file://')) {
+    return target;
+  }
+  const resolved = path.resolve(target);
+  return pathToFileURL(resolved).href;
+}
+
+export class BrowserBridge {
+  private browser: Browser | null = null;
+  private context: BrowserContext | null = null;
+  private page: Page | null = null;
+
+  /**
+   * Returns the current active Page instance, or null if not open.
+   */
+  getPage(): Page | null {
+    return this.page;
+  }
+
+  /**
+   * Opens Chromium in headless mode, injects the WebMCP bridge runtime,
+   * navigates to targetUrl, and waits for tool registration.
+   */
+  async open(targetUrl: string): Promise<void> {
+    const executablePath = findChromiumExecutable();
+
+    this.browser = await chromium.launch({
+      headless: true,
+      executablePath,
+      args: [
+        '--enable-features=WebMCP',
+        '--enable-blink-features=WebMCP',
+        '--allow-file-access-from-files',
+        '--no-sandbox',
+      ],
+    });
+
+    this.context = await this.browser.newContext();
+
+    // Inject bridge script before page scripts run
+    await this.context.addInitScript({ content: getInjectedBridgeScript() });
+
+    this.page = await this.context.newPage();
+
+    // Pipe console messages to stderr to keep stdout pristine for JSON communication
+    this.page.on('console', (msg) => {
+      process.stderr.write(`[page console] [${msg.type()}] ${msg.text()}\n`);
+    });
+
+    this.page.on('pageerror', (err) => {
+      process.stderr.write(`[page error] ${err.message || err}\n`);
+    });
+
+    const resolvedUrl = resolveTargetUrl(targetUrl);
+    await this.page.goto(resolvedUrl, { waitUntil: 'load' });
+
+    // Wait a brief tick for async tool registrations
+    await this.page.waitForTimeout(500);
+
+    const nativeSupported = await this.isNativeSupported();
+    if (!nativeSupported) {
+      process.stderr.write(
+        '[webmcp-bridge] Note: Native WebMCP is not active in this Chromium build. DevTrial flag required: chrome://flags/#enable-webmcp-testing or launch flag --enable-features=WebMCP (Chrome 146+). Injected polyfill active.\n'
+      );
+    }
+  }
+
+  /**
+   * Checks if native WebMCP is supported in the current page context.
+   */
+  async isNativeSupported(): Promise<boolean> {
+    if (!this.page) {
+      return false;
+    }
+    return await this.page.evaluate(() => {
+      return Boolean(window.__webmcp_bridge__?.isNativeSupported());
+    });
+  }
+
+  /**
+   * Discovers all registered WebMCP tools from the page.
+   */
+  async discoverTools(): Promise<DiscoveredTool[]> {
+    if (!this.page) {
+      throw new Error('Browser is not open. Call open() before discovering tools.');
+    }
+    return await this.page.evaluate(async () => {
+      if (!window.__webmcp_bridge__) {
+        throw new Error('WebMCP bridge is not initialized in the page context.');
+      }
+      return await window.__webmcp_bridge__.getTools();
+    });
+  }
+
+  /**
+   * Closes browser context and browser cleanly.
+   */
+  async close(): Promise<void> {
+    if (this.context) {
+      await this.context.close().catch(() => {});
+      this.context = null;
+    }
+    if (this.browser) {
+      await this.browser.close().catch(() => {});
+      this.browser = null;
+    }
+    this.page = null;
+  }
+}

@@ -13,4 +13,5 @@ export {
 } from './bridge-injected.js';
 
 export { findChromiumExecutable } from './browser-utils.js';
+export { BrowserBridge, resolveTargetUrl } from './browser.js';
 
