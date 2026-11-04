@@ -37,6 +37,7 @@ declare global {
  */
 export function getInjectedBridgeScript(): string {
   return `(function() {
+  'use strict';
   if (window.__webmcp_bridge__) return;
 
   const registry = new Map();
@@ -64,12 +65,35 @@ export function getInjectedBridgeScript(): string {
       }
     } else if (navigator.modelContext && typeof navigator.modelContext.registerTool === 'function') {
       const nativeRegisterTool = navigator.modelContext.registerTool.bind(navigator.modelContext);
-      navigator.modelContext.registerTool = async function(toolDef, options) {
+      const patchedRegisterTool = async function(toolDef, options) {
         if (toolDef && toolDef.name) {
           registry.set(toolDef.name, toolDef);
         }
         return await nativeRegisterTool(toolDef, options);
       };
+      try {
+        navigator.modelContext.registerTool = patchedRegisterTool;
+      } catch (e) {
+        try {
+          Object.defineProperty(navigator.modelContext, 'registerTool', {
+            value: patchedRegisterTool,
+            writable: true,
+            configurable: true
+          });
+        } catch (err2) {
+          // Fallback if prototype is protected
+          try {
+            const proto = Object.getPrototypeOf(navigator.modelContext);
+            if (proto) {
+              Object.defineProperty(proto, 'registerTool', {
+                value: patchedRegisterTool,
+                writable: true,
+                configurable: true
+              });
+            }
+          } catch (err3) {}
+        }
+      }
     }
   }
 
@@ -104,26 +128,21 @@ export function getInjectedBridgeScript(): string {
       }));
     },
     async callTool(name, input) {
-      // Check native modelContextTesting first if available
-      if (typeof navigator !== 'undefined' && navigator.modelContextTesting && typeof navigator.modelContextTesting.executeTool === 'function') {
-        try {
-          return await navigator.modelContextTesting.executeTool(name, input);
-        } catch (err) {
-          if (!registry.has(name)) {
-            throw err;
-          }
-        }
+      // If tool is in our registry with an execute function, execute it directly in page context
+      const registeredTool = registry.get(name);
+      if (registeredTool && typeof registeredTool.execute === 'function') {
+        return await registeredTool.execute(input);
       }
 
-      const tool = registry.get(name);
-      if (!tool) {
+      // Check native modelContextTesting if tool was not in local registry
+      if (typeof navigator !== 'undefined' && navigator.modelContextTesting && typeof navigator.modelContextTesting.executeTool === 'function') {
+        return await navigator.modelContextTesting.executeTool(name, input);
+      }
+
+      if (!registeredTool) {
         throw new Error('Tool "' + name + '" not found in registered WebMCP tools');
       }
-      if (typeof tool.execute !== 'function') {
-        throw new Error('Tool "' + name + '" has no execute handler function');
-      }
-
-      return await tool.execute(input);
+      throw new Error('Tool "' + name + '" has no execute handler function');
     }
   };
 })();`;

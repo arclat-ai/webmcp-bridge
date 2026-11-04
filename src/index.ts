@@ -12,3 +12,5 @@ export {
   type WebMCPBridge,
 } from './bridge-injected.js';
 
+export { findChromiumExecutable } from './browser-utils.js';
+
