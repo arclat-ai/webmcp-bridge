@@ -129,6 +129,30 @@ export class BrowserBridge {
   }
 
   /**
+   * Invokes a registered WebMCP tool in the browser page context.
+   */
+  async callTool(name: string, input?: unknown): Promise<unknown> {
+    if (!this.page) {
+      throw new Error('Browser is not open. Call open() before calling a tool.');
+    }
+    try {
+      return await this.page.evaluate(
+        async ({ toolName, toolInput }) => {
+          if (!window.__webmcp_bridge__) {
+            throw new Error('WebMCP bridge is not initialized in the page context.');
+          }
+          return await window.__webmcp_bridge__.callTool(toolName, toolInput);
+        },
+        { toolName: name, toolInput: input ?? {} }
+      );
+    } catch (err) {
+      const msg = (err as Error).message || String(err);
+      const cleanMsg = msg.replace(/^page\.evaluate:\s*(?:Error:\s*)?/, '').split('\n')[0];
+      throw new Error(cleanMsg || msg);
+    }
+  }
+
+  /**
    * Closes browser context and browser cleanly.
    */
   async close(): Promise<void> {
