@@ -12,8 +12,11 @@
     "build": "tsc",
     "discover": "tsx src/discover.ts",
     "start": "tsx src/cli.ts",
-    "test": "node --test dist/**/*.test.js"
+    "test": "tsx --test test/**/*.test.ts"
   },
+  "files": [
+    "dist"
+  ],
   "keywords": [
     "webmcp",
     "mcp",
