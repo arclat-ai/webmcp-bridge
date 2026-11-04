@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WebMCP Test Fixture</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      margin: 2rem;
+      line-height: 1.5;
+    }
+    .status {
+      padding: 1rem;
+      border-radius: 6px;
+      margin-bottom: 1rem;
+    }
+    .warning {
+      background: #fff3cd;
+      border: 1px solid #ffeeba;
+      color: #856404;
+    }
+    .success {
+      background: #d4edda;
+      border: 1px solid #c3e6cb;
+      color: #155724;
+    }
+    code {
+      background: #f1f3f5;
+      padding: 0.2rem 0.4rem;
+      border-radius: 3px;
+      font-size: 0.9em;
+    }
+  </style>
+</head>
+<body>
+  <h1>WebMCP Test Fixture</h1>
+  <div id="status" class="status">Initializing WebMCP...</div>
+  <div id="logs"></div>
+
+  <script>
+    (async function init() {
+      const statusEl = document.getElementById('status');
+      
+      if (!('modelContext' in navigator) || !navigator.modelContext?.registerTool) {
+        statusEl.className = 'status warning';
+        statusEl.innerHTML = `
+          <strong>WebMCP (navigator.modelContext) is not available.</strong><br>
+          Enable Chrome 146+ DevTrial flag: <code>chrome://flags/#enable-webmcp-testing</code>
+          or launch Chromium with <code>--enable-features=WebMCP</code>.
+        `;
+        return;
+      }
+
+      statusEl.textContent = 'Registering WebMCP tools...';
+
+      try {
+        // Tool 1: get_time
+        await navigator.modelContext.registerTool({
+          name: 'get_time',
+          description: 'Returns the current server/page time in ISO format and timezone',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              timezone: {
+                type: 'string',
+                description: 'Optional IANA timezone name'
+              }
+            }
+          },
+          execute: async (params) => {
+            const now = new Date();
+            return {
+              iso: now.toISOString(),
+              requestedTimezone: params?.timezone || 'default',
+              localeString: now.toLocaleString()
+            };
+          }
+        });
+
+        // Tool 2: search_items
+        await navigator.modelContext.registerTool({
+          name: 'search_items',
+          description: 'Searches an in-page mock inventory by query string',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              query: {
+                type: 'string',
+                description: 'Search keyword'
+              },
+              limit: {
+                type: 'number',
+                description: 'Max results'
+              }
+            },
+            required: ['query']
+          },
+          execute: async (params) => {
+            const items = [
+              { id: 1, title: 'Mechanical Keyboard', category: 'Hardware' },
+              { id: 2, title: 'USB-C Cable', category: 'Accessories' },
+              { id: 3, title: '4K Monitor', category: 'Hardware' },
+              { id: 4, title: 'Desk Lamp', category: 'Furniture' }
+            ];
+            const query = (params?.query || '').toLowerCase();
+            const limit = typeof params?.limit === 'number' ? params.limit : 10;
+            const matched = items.filter(i => 
+              i.title.toLowerCase().includes(query) || 
+              i.category.toLowerCase().includes(query)
+            ).slice(0, limit);
+
+            return {
+              query: params?.query,
+              count: matched.length,
+              results: matched
+            };
+          }
+        });
+
+        statusEl.className = 'status success';
+        statusEl.textContent = 'WebMCP tools registered successfully (get_time, search_items)';
+      } catch (err) {
+        statusEl.className = 'status warning';
+        statusEl.textContent = 'Failed to register tools: ' + (err?.message || String(err));
+      }
+    })();
+  </script>
+</body>
+</html>

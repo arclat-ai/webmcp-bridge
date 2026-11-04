@@ -4,3 +4,11 @@
  */
 
 export const VERSION = '0.1.0';
+
+export {
+  getInjectedBridgeScript,
+  type WebMCPToolDef,
+  type DiscoveredTool,
+  type WebMCPBridge,
+} from './bridge-injected.js';
+
