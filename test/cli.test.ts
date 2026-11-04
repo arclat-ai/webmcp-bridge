@@ -177,4 +177,23 @@ describe('CLI Integration: webmcp-bridge', () => {
     assert.ok(result.stderr.length > 0, 'stderr should have error message');
     assert.strictEqual(result.stdout.trim(), '', 'stdout must be clean');
   });
+
+  it('imports library entry points (src/index.js and dist/index.js) without circular TDZ ReferenceError', async () => {
+    // Dynamic import to test ESM module evaluation
+    const srcIndex = await import('../src/index.js');
+    assert.strictEqual(srcIndex.VERSION, '0.1.0');
+    assert.strictEqual(typeof srcIndex.runCli, 'function');
+    assert.strictEqual(typeof srcIndex.startMcpServer, 'function');
+    assert.strictEqual(typeof srcIndex.runDiscover, 'function');
+
+    const distIndexPath = path.resolve(rootDir, 'dist/index.js');
+    if (fs.existsSync(distIndexPath)) {
+      const { pathToFileURL } = await import('node:url');
+      const distIndex = await import(pathToFileURL(distIndexPath).href);
+      assert.strictEqual(distIndex.VERSION, '0.1.0');
+      assert.strictEqual(typeof distIndex.runCli, 'function');
+      assert.strictEqual(typeof distIndex.startMcpServer, 'function');
+      assert.strictEqual(typeof distIndex.runDiscover, 'function');
+    }
+  });
 });

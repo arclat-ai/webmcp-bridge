@@ -2,7 +2,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { VERSION } from './index.js';
+import { VERSION } from './version.js';
 import { startMcpServer } from './server.js';
 import { runDiscover } from './discover.js';
 
