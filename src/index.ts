@@ -14,4 +14,11 @@ export {
 
 export { findChromiumExecutable } from './browser-utils.js';
 export { BrowserBridge, resolveTargetUrl } from './browser.js';
+export { mapWebMCPToMCPTool } from './schema-mapper.js';
+export {
+  createMcpServer,
+  startMcpServer,
+  type StartMcpServerOptions,
+  type RunningMcpServer,
+} from './server.js';
 
