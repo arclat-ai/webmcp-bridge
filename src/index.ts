@@ -21,4 +21,6 @@ export {
   type StartMcpServerOptions,
   type RunningMcpServer,
 } from './server.js';
+export { runDiscover } from './discover.js';
+export { runCli } from './cli.js';
 
