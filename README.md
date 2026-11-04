@@ -137,8 +137,11 @@ To expose tools from your frontend web application:
 
 ```html
 <script>
-  if ('modelContext' in navigator) {
-    navigator.modelContext.registerTool({
+  // Supports both document.modelContext (modern Chromium draft) and navigator.modelContext
+  const modelContext = window.document?.modelContext ?? window.navigator?.modelContext;
+
+  if (modelContext && typeof modelContext.registerTool === 'function') {
+    modelContext.registerTool({
       name: 'get_cart',
       description: 'Returns items currently in the user shopping cart',
       inputSchema: {

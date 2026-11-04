@@ -12,7 +12,8 @@
     "build": "tsc",
     "discover": "tsx src/discover.ts",
     "start": "tsx src/cli.ts",
-    "test": "tsx --test test/**/*.test.ts"
+    "test": "tsx --test test/**/*.test.ts",
+    "prepack": "npm run build"
   },
   "files": [
     "dist"
