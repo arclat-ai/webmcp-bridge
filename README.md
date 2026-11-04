@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="./assets/logo.svg" alt="webmcp-bridge logo" width="800" />
+</p>
+
 # webmcp-bridge
 
 > Bridge between browser-native WebMCP (`navigator.modelContext.registerTool()`) and Model Context Protocol (MCP) clients (Claude Desktop, Claude Code, etc.).

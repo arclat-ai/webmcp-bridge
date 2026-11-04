@@ -1,0 +1,130 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 240" width="100%" height="100%" fill="none">
+  <defs>
+    <!-- Background Gradients -->
+    <linearGradient id="bg-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0b0f19"/>
+      <stop offset="50%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#090d16"/>
+    </linearGradient>
+
+    <!-- Accent Gradients -->
+    <linearGradient id="cyan-violet" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="50%" stop-color="#818cf8"/>
+      <stop offset="100%" stop-color="#c084fc"/>
+    </linearGradient>
+
+    <linearGradient id="bridge-beam" x1="0%" y1="50%" x2="100%" y2="50%">
+      <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.9"/>
+      <stop offset="50%" stop-color="#a855f7" stop-opacity="1"/>
+      <stop offset="100%" stop-color="#6366f1" stop-opacity="0.9"/>
+    </linearGradient>
+
+    <linearGradient id="sphere-glow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#6366f1" stop-opacity="0.05"/>
+    </linearGradient>
+
+    <!-- Filter for Glow Effects -->
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="8" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+
+    <filter id="soft-glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="16" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background Card -->
+  <rect width="800" height="240" rx="24" fill="url(#bg-grad)" stroke="#1e293b" stroke-width="1.5"/>
+
+  <!-- Subtle Grid Pattern in Icon Area -->
+  <g opacity="0.12" stroke="#38bdf8" stroke-width="1">
+    <line x1="40" y1="60" x2="200" y2="60" />
+    <line x1="40" y1="120" x2="200" y2="120" />
+    <line x1="40" y1="180" x2="200" y2="180" />
+    <line x1="60" y1="40" x2="60" y2="200" />
+    <line x1="120" y1="40" x2="120" y2="200" />
+    <line x1="180" y1="40" x2="180" y2="200" />
+  </g>
+
+  <!-- ICON SECTION (Center ~120, 120) -->
+  <g transform="translate(10, 0)">
+    <!-- Outer Glow Circle -->
+    <circle cx="110" cy="120" r="64" fill="url(#sphere-glow)" filter="url(#soft-glow)" />
+
+    <!-- Browser Tab / Window (Web side - Left) -->
+    <rect x="62" y="76" width="46" height="40" rx="8" fill="#1e293b" stroke="#38bdf8" stroke-width="2" opacity="0.95"/>
+    <circle cx="72" cy="85" r="2.5" fill="#ef4444" />
+    <circle cx="80" cy="85" r="2.5" fill="#f59e0b" />
+    <circle cx="88" cy="85" r="2.5" fill="#10b981" />
+    <line x1="68" y1="96" x2="102" y2="96" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
+    <line x1="68" y1="104" x2="92" y2="104" stroke="#64748b" stroke-width="2" stroke-linecap="round" />
+
+    <!-- MCP Server Node / Agent Brain (MCP side - Right) -->
+    <rect x="124" y="116" width="46" height="40" rx="8" fill="#1e1b4b" stroke="#a855f7" stroke-width="2" opacity="0.95"/>
+    <!-- MCP Node Triangles / Hex Core -->
+    <circle cx="147" cy="136" r="6" fill="#c084fc" filter="url(#glow)"/>
+    <circle cx="134" cy="127" r="2.5" fill="#818cf8"/>
+    <circle cx="160" cy="127" r="2.5" fill="#818cf8"/>
+    <circle cx="147" cy="148" r="2.5" fill="#818cf8"/>
+    <line x1="134" y1="127" x2="147" y2="136" stroke="#818cf8" stroke-width="1.5" opacity="0.8"/>
+    <line x1="160" y1="127" x2="147" y2="136" stroke="#818cf8" stroke-width="1.5" opacity="0.8"/>
+    <line x1="147" y1="148" x2="147" y2="136" stroke="#818cf8" stroke-width="1.5" opacity="0.8"/>
+
+    <!-- Luminous Bridge Arc connecting Web to MCP -->
+    <path d="M 96 96 C 112 96, 120 136, 136 136" fill="none" stroke="url(#bridge-beam)" stroke-width="4" stroke-linecap="round" filter="url(#glow)"/>
+    <!-- Pulse Particles on Bridge -->
+    <circle cx="116" cy="116" r="3.5" fill="#ffffff" filter="url(#glow)"/>
+    <circle cx="106" cy="103" r="2" fill="#38bdf8"/>
+    <circle cx="126" cy="129" r="2" fill="#c084fc"/>
+
+    <!-- Dynamic Protocol Rings -->
+    <circle cx="110" cy="120" r="54" stroke="url(#cyan-violet)" stroke-width="1.5" stroke-dasharray="4 8" opacity="0.6"/>
+  </g>
+
+  <!-- BRAND TYPOGRAPHY -->
+  <g transform="translate(210, 0)">
+    <!-- Organization Pill -->
+    <rect x="0" y="46" width="112" height="24" rx="12" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+    <circle cx="12" cy="58" r="4" fill="#38bdf8"/>
+    <text x="24" y="63" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="600" fill="#94a3b8" letter-spacing="0.5">ARCLAT AI</text>
+
+    <!-- Main Title: webmcp-bridge -->
+    <text x="0" y="122" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Inter', sans-serif" font-size="46" font-weight="800" fill="#ffffff" letter-spacing="-1">
+      webmcp<tspan fill="url(#cyan-violet)">-bridge</tspan>
+    </text>
+
+    <!-- Subtitle / Value Proposition -->
+    <text x="2" y="156" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="15" font-weight="400" fill="#94a3b8">
+      Bridge browser-native WebMCP tools to Model Context Protocol (MCP) clients
+    </text>
+
+    <!-- Badges / Tags -->
+    <g transform="translate(0, 176)">
+      <!-- Badge 1: WebMCP -->
+      <rect x="0" y="0" width="76" height="22" rx="6" fill="#0369a1" fill-opacity="0.25" stroke="#0284c7" stroke-width="1"/>
+      <text x="38" y="15" text-anchor="middle" font-family="monospace" font-size="11" font-weight="600" fill="#38bdf8">WebMCP</text>
+
+      <!-- Badge 2: MCP Stdio -->
+      <rect x="84" y="0" width="80" height="22" rx="6" fill="#4338ca" fill-opacity="0.25" stroke="#6366f1" stroke-width="1"/>
+      <text x="124" y="15" text-anchor="middle" font-family="monospace" font-size="11" font-weight="600" fill="#a5b4fc">MCP Stdio</text>
+
+      <!-- Badge 3: Playwright -->
+      <rect x="172" y="0" width="88" height="22" rx="6" fill="#065f46" fill-opacity="0.25" stroke="#059669" stroke-width="1"/>
+      <text x="216" y="15" text-anchor="middle" font-family="monospace" font-size="11" font-weight="600" fill="#34d399">Playwright</text>
+
+      <!-- Badge 4: TypeScript -->
+      <rect x="268" y="0" width="84" height="22" rx="6" fill="#1e3a8a" fill-opacity="0.25" stroke="#2563eb" stroke-width="1"/>
+      <text x="310" y="15" text-anchor="middle" font-family="monospace" font-size="11" font-weight="600" fill="#60a5fa">TypeScript</text>
+    </g>
+  </g>
+</svg>
