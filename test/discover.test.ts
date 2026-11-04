@@ -65,9 +65,10 @@ describe('discover.js CLI Integration', () => {
 
     // Stderr should contain diagnostic / page console info, never tool JSON
     assert.ok(
-      stderr.includes('[webmcp-bridge]') || stderr.includes('Note:') || stderr.length >= 0,
-      'Stderr captures diagnostic notes'
+      stderr.includes('[webmcp-bridge]') || stderr.includes('[page console]'),
+      'Stderr captures diagnostic notes or console logs'
     );
+    assert.ok(!stdout.includes('[page console]'), 'Stdout does not leak console logs');
 
     // Stdout must be clean, parseable JSON
     let parsed: any;
@@ -95,5 +96,21 @@ describe('discover.js CLI Integration', () => {
     assert.strictEqual(searchItems.inputSchema.type, 'object');
     assert.ok(searchItems.inputSchema.properties.query);
     assert.deepStrictEqual(searchItems.inputSchema.required, ['query']);
+  });
+
+  it('fails with code 1 and writes error to stderr when target file is not found', async () => {
+    await assert.rejects(
+      async () => {
+        await execFileAsync(process.execPath, [discoverScript, 'nonexistent_test_fixture.html'], {
+          cwd: rootDir,
+        });
+      },
+      (err: any) => {
+        assert.strictEqual(err.code, 1);
+        assert.ok(err.stderr.includes('Discovery failed') || err.stderr.includes('ERR_FILE_NOT_FOUND'));
+        assert.strictEqual(err.stdout.trim(), '');
+        return true;
+      }
+    );
   });
 });

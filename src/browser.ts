@@ -8,11 +8,22 @@ import { findChromiumExecutable } from './browser-utils.js';
  * Resolves a URL or local file path into an absolute file:// or http(s):// URL.
  */
 export function resolveTargetUrl(target: string): string {
-  if (target.startsWith('http://') || target.startsWith('https://') || target.startsWith('file://')) {
+  if (
+    target.startsWith('http://') ||
+    target.startsWith('https://') ||
+    target.startsWith('file://') ||
+    target.startsWith('about:') ||
+    target.startsWith('data:')
+  ) {
     return target;
   }
   const resolved = path.resolve(target);
   return pathToFileURL(resolved).href;
+}
+
+export interface BrowserOpenOptions {
+  timeout?: number;
+  waitRegistrationMs?: number;
 }
 
 export class BrowserBridge {
@@ -31,47 +42,62 @@ export class BrowserBridge {
    * Opens Chromium in headless mode, injects the WebMCP bridge runtime,
    * navigates to targetUrl, and waits for tool registration.
    */
-  async open(targetUrl: string): Promise<void> {
-    const executablePath = findChromiumExecutable();
+  async open(targetUrl: string, options?: BrowserOpenOptions): Promise<void> {
+    if (this.browser) {
+      await this.close();
+    }
 
-    this.browser = await chromium.launch({
-      headless: true,
-      executablePath,
-      args: [
-        '--enable-features=WebMCP',
-        '--enable-blink-features=WebMCP',
-        '--allow-file-access-from-files',
-        '--no-sandbox',
-      ],
-    });
+    try {
+      const executablePath = findChromiumExecutable();
 
-    this.context = await this.browser.newContext();
+      this.browser = await chromium.launch({
+        headless: true,
+        executablePath,
+        args: [
+          '--enable-features=WebMCP',
+          '--enable-blink-features=WebMCP',
+          '--allow-file-access-from-files',
+          '--no-sandbox',
+        ],
+      });
 
-    // Inject bridge script before page scripts run
-    await this.context.addInitScript({ content: getInjectedBridgeScript() });
+      this.context = await this.browser.newContext();
 
-    this.page = await this.context.newPage();
+      // Inject bridge script before page scripts run
+      await this.context.addInitScript({ content: getInjectedBridgeScript() });
 
-    // Pipe console messages to stderr to keep stdout pristine for JSON communication
-    this.page.on('console', (msg) => {
-      process.stderr.write(`[page console] [${msg.type()}] ${msg.text()}\n`);
-    });
+      this.page = await this.context.newPage();
 
-    this.page.on('pageerror', (err) => {
-      process.stderr.write(`[page error] ${err.message || err}\n`);
-    });
+      // Pipe console messages to stderr to keep stdout pristine for JSON communication
+      this.page.on('console', (msg) => {
+        process.stderr.write(`[page console] [${msg.type()}] ${msg.text()}\n`);
+      });
 
-    const resolvedUrl = resolveTargetUrl(targetUrl);
-    await this.page.goto(resolvedUrl, { waitUntil: 'load' });
+      this.page.on('pageerror', (err) => {
+        process.stderr.write(`[page error] ${err.message || err}\n`);
+      });
 
-    // Wait a brief tick for async tool registrations
-    await this.page.waitForTimeout(500);
+      const resolvedUrl = resolveTargetUrl(targetUrl);
+      await this.page.goto(resolvedUrl, {
+        waitUntil: 'load',
+        timeout: options?.timeout ?? 30000,
+      });
 
-    const nativeSupported = await this.isNativeSupported();
-    if (!nativeSupported) {
-      process.stderr.write(
-        '[webmcp-bridge] Note: Native WebMCP is not active in this Chromium build. DevTrial flag required: chrome://flags/#enable-webmcp-testing or launch flag --enable-features=WebMCP (Chrome 146+). Injected polyfill active.\n'
-      );
+      // Wait a brief tick for async tool registrations
+      const waitMs = options?.waitRegistrationMs ?? 500;
+      if (waitMs > 0) {
+        await this.page.waitForTimeout(waitMs);
+      }
+
+      const nativeSupported = await this.isNativeSupported();
+      if (!nativeSupported) {
+        process.stderr.write(
+          '[webmcp-bridge] Note: Native WebMCP is not active in this Chromium build. DevTrial flag required: chrome://flags/#enable-webmcp-testing or launch flag --enable-features=WebMCP (Chrome 146+). Injected polyfill active.\n'
+        );
+      }
+    } catch (err) {
+      await this.close();
+      throw err;
     }
   }
 

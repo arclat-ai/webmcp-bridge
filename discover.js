@@ -27,8 +27,12 @@ async function main() {
     const child = spawn(process.execPath, [tsxCli, srcDiscover, ...process.argv.slice(2)], {
       stdio: 'inherit',
     });
+    child.on('error', (err) => {
+      process.stderr.write(`[webmcp-bridge] Spawn error: ${err}\n`);
+      process.exit(1);
+    });
     child.on('exit', (code) => {
-      process.exit(code ?? 0);
+      process.exit(code ?? 1);
     });
   } catch (err) {
     if (fs.existsSync(distDiscover)) {
