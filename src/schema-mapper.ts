@@ -36,16 +36,19 @@ export function mapWebMCPToMCPTool(tool: DiscoveredTool): Tool {
       }
     }
 
+    const { required: rawRequired, ...restSchema } = rawSchema;
     inputSchema = {
-      ...rawSchema,
+      ...restSchema,
       type: 'object',
       properties,
     };
 
-    if (Array.isArray(rawSchema.required)) {
-      inputSchema.required = rawSchema.required.filter(
+    if (Array.isArray(rawRequired)) {
+      inputSchema.required = rawRequired.filter(
         (item): item is string => typeof item === 'string'
       );
+    } else if (typeof rawRequired === 'string') {
+      inputSchema.required = [rawRequired];
     }
   }
 

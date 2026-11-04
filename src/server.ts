@@ -11,6 +11,7 @@ import { mapWebMCPToMCPTool } from './schema-mapper.js';
 export interface StartMcpServerOptions {
   transport?: Transport;
   bridge?: BrowserBridge;
+  handleSignals?: boolean;
 }
 
 export interface RunningMcpServer {
@@ -90,22 +91,28 @@ export async function startMcpServer(
   const server = createMcpServer(bridge);
   const transport = options?.transport ?? new StdioServerTransport();
 
-  let isClosed = false;
+  let closePromise: Promise<void> | null = null;
   const close = async () => {
-    if (isClosed) return;
-    isClosed = true;
-    process.removeListener('SIGINT', handleSignal);
-    process.removeListener('SIGTERM', handleSignal);
-    try {
-      await server.close();
-    } catch {
-      // Ignore transport/server close errors during cleanup
-    }
-    try {
-      await bridge.close();
-    } catch {
-      // Ignore browser bridge close errors during cleanup
-    }
+    if (closePromise) return closePromise;
+
+    closePromise = (async () => {
+      if (shouldHandleSignals) {
+        process.removeListener('SIGINT', handleSignal);
+        process.removeListener('SIGTERM', handleSignal);
+      }
+      try {
+        await server.close();
+      } catch {
+        // Ignore transport/server close errors during cleanup
+      }
+      try {
+        await bridge.close();
+      } catch {
+        // Ignore browser bridge close errors during cleanup
+      }
+    })();
+
+    return closePromise;
   };
 
   const handleSignal = async () => {
@@ -113,8 +120,11 @@ export async function startMcpServer(
     process.exit(0);
   };
 
-  process.on('SIGINT', handleSignal);
-  process.on('SIGTERM', handleSignal);
+  const shouldHandleSignals = options?.handleSignals ?? !options?.transport;
+  if (shouldHandleSignals) {
+    process.on('SIGINT', handleSignal);
+    process.on('SIGTERM', handleSignal);
+  }
 
   try {
     await server.connect(transport);

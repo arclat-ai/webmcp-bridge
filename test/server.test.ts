@@ -44,6 +44,34 @@ describe('Schema Mapper: mapWebMCPToMCPTool', () => {
     assert.strictEqual(validated.name, 'search_items');
   });
 
+  it('handles non-array required field cleanly without leaking invalid types to ToolSchema', () => {
+    const toolWithStringRequired: any = {
+      name: 'string_required_tool',
+      inputSchema: {
+        type: 'object',
+        properties: { id: { type: 'string' } },
+        required: 'id', // String instead of array
+      },
+    };
+
+    const toolWithNullRequired: any = {
+      name: 'null_required_tool',
+      inputSchema: {
+        type: 'object',
+        properties: { id: { type: 'string' } },
+        required: null,
+      },
+    };
+
+    const mapped1 = mapWebMCPToMCPTool(toolWithStringRequired);
+    assert.deepStrictEqual(mapped1.inputSchema.required, ['id']);
+    assert.ok(ToolSchema.parse(mapped1));
+
+    const mapped2 = mapWebMCPToMCPTool(toolWithNullRequired);
+    assert.strictEqual(mapped2.inputSchema.required, undefined);
+    assert.ok(ToolSchema.parse(mapped2));
+  });
+
   it('handles empty or missing schema with fallback to default object schema', () => {
     const toolWithNoSchema: any = {
       name: 'empty_schema_tool',
