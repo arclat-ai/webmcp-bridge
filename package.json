@@ -22,6 +22,14 @@
     "browser"
   ],
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/arclat-ai/webmcp-bridge.git"
+  },
+  "homepage": "https://github.com/arclat-ai/webmcp-bridge#readme",
+  "bugs": {
+    "url": "https://github.com/arclat-ai/webmcp-bridge/issues"
+  },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.6.1",
     "playwright": "^1.50.0",
