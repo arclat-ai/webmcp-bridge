@@ -66,11 +66,7 @@ export async function runDiscover(args: string[] = process.argv.slice(2)): Promi
     await bridge.open(targetUrl);
     if (isCall && toolName) {
       const result = await bridge.callTool(toolName, callArgs);
-      if (typeof result === 'object' && result !== null) {
-        console.log(JSON.stringify(result, null, 2));
-      } else {
-        console.log(result);
-      }
+      console.log(result !== undefined ? JSON.stringify(result, null, 2) : 'null');
     } else {
       const tools = await bridge.discoverTools();
       console.log(JSON.stringify(tools, null, 2));

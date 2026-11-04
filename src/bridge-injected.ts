@@ -41,11 +41,13 @@ export function getInjectedBridgeScript(): string {
   if (window.__webmcp_bridge__) return;
 
   const registry = new Map();
-  const hasNativeModelContext = typeof navigator !== 'undefined' && 'modelContext' in navigator;
+  const hasNativeModelContext = (typeof navigator !== 'undefined' && 'modelContext' in navigator) ||
+    (typeof document !== 'undefined' && 'modelContext' in document);
   const hasNativeModelContextTesting = typeof navigator !== 'undefined' && 'modelContextTesting' in navigator;
 
-  if (typeof navigator !== 'undefined') {
-    if (!('modelContext' in navigator)) {
+  const hookTarget = function(obj, prop) {
+    if (!obj) return;
+    if (!(prop in obj)) {
       const mc = {
         async registerTool(toolDef) {
           if (!toolDef || typeof toolDef !== 'object' || !toolDef.name) {
@@ -55,16 +57,16 @@ export function getInjectedBridgeScript(): string {
         }
       };
       try {
-        navigator.modelContext = mc;
+        obj[prop] = mc;
       } catch (e) {
-        Object.defineProperty(navigator, 'modelContext', {
+        Object.defineProperty(obj, prop, {
           value: mc,
           writable: true,
           configurable: true
         });
       }
-    } else if (navigator.modelContext && typeof navigator.modelContext.registerTool === 'function') {
-      const nativeRegisterTool = navigator.modelContext.registerTool.bind(navigator.modelContext);
+    } else if (obj[prop] && typeof obj[prop].registerTool === 'function') {
+      const nativeRegisterTool = obj[prop].registerTool.bind(obj[prop]);
       const patchedRegisterTool = async function(toolDef, options) {
         if (toolDef && toolDef.name) {
           registry.set(toolDef.name, toolDef);
@@ -72,18 +74,17 @@ export function getInjectedBridgeScript(): string {
         return await nativeRegisterTool(toolDef, options);
       };
       try {
-        navigator.modelContext.registerTool = patchedRegisterTool;
+        obj[prop].registerTool = patchedRegisterTool;
       } catch (e) {
         try {
-          Object.defineProperty(navigator.modelContext, 'registerTool', {
+          Object.defineProperty(obj[prop], 'registerTool', {
             value: patchedRegisterTool,
             writable: true,
             configurable: true
           });
         } catch (err2) {
-          // Fallback if prototype is protected
           try {
-            const proto = Object.getPrototypeOf(navigator.modelContext);
+            const proto = Object.getPrototypeOf(obj[prop]);
             if (proto) {
               Object.defineProperty(proto, 'registerTool', {
                 value: patchedRegisterTool,
@@ -95,7 +96,10 @@ export function getInjectedBridgeScript(): string {
         }
       }
     }
-  }
+  };
+
+  if (typeof navigator !== 'undefined') hookTarget(navigator, 'modelContext');
+  if (typeof document !== 'undefined') hookTarget(document, 'modelContext');
 
   window.__webmcp_bridge__ = {
     isSupported() {

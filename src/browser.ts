@@ -148,7 +148,7 @@ export class BrowserBridge {
     } catch (err) {
       const msg = (err as Error).message || String(err);
       const cleanMsg = msg.replace(/^page\.evaluate:\s*(?:Error:\s*)?/, '').split('\n')[0];
-      throw new Error(cleanMsg || msg);
+      throw new Error(cleanMsg || msg, { cause: err });
     }
   }
 
