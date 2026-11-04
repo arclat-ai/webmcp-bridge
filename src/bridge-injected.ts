@@ -47,7 +47,7 @@ export function getInjectedBridgeScript(): string {
 
   const hookTarget = function(obj, prop) {
     if (!obj) return;
-    if (!(prop in obj)) {
+    if (!obj[prop] || typeof obj[prop].registerTool !== 'function') {
       const mc = {
         async registerTool(toolDef) {
           if (!toolDef || typeof toolDef !== 'object' || !toolDef.name) {

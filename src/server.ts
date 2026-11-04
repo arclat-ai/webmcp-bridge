@@ -7,6 +7,7 @@ import {
 import type { Transport } from '@modelcontextprotocol/sdk/shared/transport.js';
 import { BrowserBridge } from './browser.js';
 import { mapWebMCPToMCPTool } from './schema-mapper.js';
+import { VERSION } from './version.js';
 
 export interface StartMcpServerOptions {
   transport?: Transport;
@@ -27,7 +28,7 @@ export interface RunningMcpServer {
  */
 export function createMcpServer(bridge: BrowserBridge): Server {
   const server = new Server(
-    { name: 'webmcp-bridge', version: '0.1.0' },
+    { name: 'webmcp-bridge', version: VERSION },
     { capabilities: { tools: {} } }
   );
 
