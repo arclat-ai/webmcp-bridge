@@ -3,27 +3,30 @@ import { pathToFileURL } from 'node:url';
 import { chromium, type Browser, type BrowserContext, type Page } from 'playwright';
 import { getInjectedBridgeScript, type DiscoveredTool } from './bridge-injected.js';
 import { findChromiumExecutable } from './browser-utils.js';
+import { validateToolCall, validateTargetUrl } from './validation.js';
 
 /**
  * Resolves a URL or local file path into an absolute file:// or http(s):// URL.
  */
 export function resolveTargetUrl(target: string): string {
+  const validated = validateTargetUrl(target);
   if (
-    target.startsWith('http://') ||
-    target.startsWith('https://') ||
-    target.startsWith('file://') ||
-    target.startsWith('about:') ||
-    target.startsWith('data:')
+    validated.startsWith('http://') ||
+    validated.startsWith('https://') ||
+    validated.startsWith('file://') ||
+    validated.startsWith('about:') ||
+    validated.startsWith('data:')
   ) {
-    return target;
+    return validated;
   }
-  const resolved = path.resolve(target);
+  const resolved = path.resolve(validated);
   return pathToFileURL(resolved).href;
 }
 
 export interface BrowserOpenOptions {
   timeout?: number;
   waitRegistrationMs?: number;
+  noSandbox?: boolean;
 }
 
 export class BrowserBridge {
@@ -50,15 +53,24 @@ export class BrowserBridge {
     try {
       const executablePath = findChromiumExecutable();
 
+      const enableNoSandbox =
+        options?.noSandbox ??
+        (process.env.WEBMCP_NO_SANDBOX === '1');
+
+      const launchArgs = [
+        '--enable-features=WebMCP',
+        '--enable-blink-features=WebMCP',
+        '--allow-file-access-from-files',
+      ];
+
+      if (enableNoSandbox) {
+        launchArgs.push('--no-sandbox');
+      }
+
       this.browser = await chromium.launch({
         headless: true,
         executablePath,
-        args: [
-          '--enable-features=WebMCP',
-          '--enable-blink-features=WebMCP',
-          '--allow-file-access-from-files',
-          '--no-sandbox',
-        ],
+        args: launchArgs,
       });
 
       this.context = await this.browser.newContext();
@@ -135,6 +147,7 @@ export class BrowserBridge {
     if (!this.page) {
       throw new Error('Browser is not open. Call open() before calling a tool.');
     }
+    const { name: validName, args: validArgs } = validateToolCall(name, input);
     try {
       return await this.page.evaluate(
         async ({ toolName, toolInput }) => {
@@ -143,7 +156,7 @@ export class BrowserBridge {
           }
           return await window.__webmcp_bridge__.callTool(toolName, toolInput);
         },
-        { toolName: name, toolInput: input ?? {} }
+        { toolName: validName, toolInput: validArgs }
       );
     } catch (err) {
       const msg = (err as Error).message || String(err);

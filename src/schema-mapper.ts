@@ -1,64 +1,22 @@
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 import type { DiscoveredTool } from './bridge-injected.js';
+import { sanitizeWebMCPTool } from './validation.js';
 
 /**
  * Maps a WebMCP tool definition discovered from the browser page into
- * an MCP Tool definition compliant with the MCP specification.
+ * an MCP Tool definition compliant with the MCP specification,
+ * enforcing bounds on tool name, description, and schema properties.
  */
 export function mapWebMCPToMCPTool(tool: DiscoveredTool): Tool {
-  const name = tool?.name ? String(tool.name) : 'unnamed_tool';
-
-  let inputSchema: Tool['inputSchema'] = {
-    type: 'object',
-    properties: {},
-  };
-
-  if (
-    tool?.inputSchema &&
-    typeof tool.inputSchema === 'object' &&
-    !Array.isArray(tool.inputSchema)
-  ) {
-    const rawSchema = tool.inputSchema as Record<string, unknown>;
-    const rawProperties = rawSchema.properties;
-
-    const properties: Record<string, object> = {};
-    if (
-      rawProperties &&
-      typeof rawProperties === 'object' &&
-      !Array.isArray(rawProperties)
-    ) {
-      for (const [key, val] of Object.entries(rawProperties as Record<string, unknown>)) {
-        if (val && typeof val === 'object' && !Array.isArray(val)) {
-          properties[key] = val as object;
-        } else {
-          properties[key] = {};
-        }
-      }
-    }
-
-    const { required: rawRequired, ...restSchema } = rawSchema;
-    inputSchema = {
-      ...restSchema,
-      type: 'object',
-      properties,
-    };
-
-    if (Array.isArray(rawRequired)) {
-      inputSchema.required = rawRequired.filter(
-        (item): item is string => typeof item === 'string'
-      );
-    } else if (typeof rawRequired === 'string') {
-      inputSchema.required = [rawRequired];
-    }
-  }
+  const sanitized = sanitizeWebMCPTool(tool);
 
   const mcpTool: Tool = {
-    name,
-    inputSchema,
+    name: sanitized.name,
+    inputSchema: sanitized.inputSchema as Tool['inputSchema'],
   };
 
-  if (tool?.description !== undefined && tool?.description !== null) {
-    mcpTool.description = String(tool.description);
+  if (sanitized.description !== undefined && sanitized.description !== null) {
+    mcpTool.description = sanitized.description;
   } else {
     mcpTool.description = '';
   }

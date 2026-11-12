@@ -7,6 +7,11 @@ import {
 import type { Transport } from '@modelcontextprotocol/sdk/shared/transport.js';
 import { BrowserBridge } from './browser.js';
 import { mapWebMCPToMCPTool } from './schema-mapper.js';
+import {
+  validateToolCall,
+  sanitizeDiscoveredTools,
+  formatAndValidateToolResult,
+} from './validation.js';
 import { VERSION } from './version.js';
 
 export interface StartMcpServerOptions {
@@ -34,18 +39,17 @@ export function createMcpServer(bridge: BrowserBridge): Server {
 
   server.setRequestHandler(ListToolsRequestSchema, async () => {
     const discovered = await bridge.discoverTools();
-    const tools = discovered.map(mapWebMCPToMCPTool);
+    const sanitized = sanitizeDiscoveredTools(discovered);
+    const tools = sanitized.map(mapWebMCPToMCPTool);
     return { tools };
   });
 
   server.setRequestHandler(CallToolRequestSchema, async (request) => {
     const { name, arguments: args } = request.params;
     try {
-      const result = await bridge.callTool(name, args ?? {});
-      const text =
-        typeof result === 'string'
-          ? result
-          : JSON.stringify(result, null, 2) ?? '';
+      const { name: validName, args: validArgs } = validateToolCall(name, args);
+      const result = await bridge.callTool(validName, validArgs);
+      const text = formatAndValidateToolResult(result);
       return {
         content: [
           {

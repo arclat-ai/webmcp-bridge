@@ -2,6 +2,7 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { BrowserBridge } from './browser.js';
+import { sanitizeDiscoveredTools } from './validation.js';
 
 /**
  * Runs tool discovery or tool invocation against a target URL or HTML file.
@@ -69,7 +70,8 @@ export async function runDiscover(args: string[] = process.argv.slice(2)): Promi
       console.log(result !== undefined ? JSON.stringify(result, null, 2) : 'null');
     } else {
       const tools = await bridge.discoverTools();
-      console.log(JSON.stringify(tools, null, 2));
+      const sanitized = sanitizeDiscoveredTools(tools);
+      console.log(JSON.stringify(sanitized, null, 2));
     }
   } catch (err) {
     const action = isCall ? 'Tool invocation' : 'Discovery';
