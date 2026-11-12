@@ -23,4 +23,18 @@ export {
 } from './server.js';
 export { runDiscover } from './discover.js';
 export { runCli } from './cli.js';
+export {
+  ValidationError,
+  type ValidationLimits,
+  DEFAULT_VALIDATION_LIMITS,
+  DISALLOWED_URL_SCHEMES,
+  ToolNameSchema,
+  ToolArgumentsSchema,
+  validatePayloadBounds,
+  validateToolCall,
+  validateTargetUrl,
+  formatAndValidateToolResult,
+  sanitizeWebMCPTool,
+  sanitizeDiscoveredTools,
+} from './validation.js';
 

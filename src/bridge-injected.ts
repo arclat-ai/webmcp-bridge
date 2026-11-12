@@ -50,8 +50,11 @@ export function getInjectedBridgeScript(): string {
     if (!obj[prop] || typeof obj[prop].registerTool !== 'function') {
       const mc = {
         async registerTool(toolDef) {
-          if (!toolDef || typeof toolDef !== 'object' || !toolDef.name) {
-            throw new Error('WebMCP registerTool requires a tool definition with a name.');
+          if (!toolDef || typeof toolDef !== 'object' || typeof toolDef.name !== 'string' || !toolDef.name.trim()) {
+            throw new Error('WebMCP registerTool requires a tool definition with a non-empty string name.');
+          }
+          if (toolDef.name.length > 256) {
+            throw new Error('WebMCP registerTool: tool name exceeds maximum length of 256 characters.');
           }
           registry.set(toolDef.name, toolDef);
         }
@@ -68,7 +71,7 @@ export function getInjectedBridgeScript(): string {
     } else if (obj[prop] && typeof obj[prop].registerTool === 'function') {
       const nativeRegisterTool = obj[prop].registerTool.bind(obj[prop]);
       const patchedRegisterTool = async function(toolDef, options) {
-        if (toolDef && toolDef.name) {
+        if (toolDef && typeof toolDef.name === 'string' && toolDef.name.trim() && toolDef.name.length <= 256) {
           registry.set(toolDef.name, toolDef);
         }
         return await nativeRegisterTool(toolDef, options);
